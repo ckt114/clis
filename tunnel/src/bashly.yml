@@ -1,0 +1,105 @@
+name: tunnel
+help: Create a reverse proxy tunnel using frpc.
+version: 0.1.0
+
+
+args:
+
+- name: port
+  required: true
+  validate: integer
+  help: Local port to proxy to
+
+
+environment_variables:
+- name: tunnel_auth_token
+
+- name: tunnel_server_addr
+  default: frps.example.com
+
+- name: tunnel_server_port
+  default: '7000'
+
+- name: tunnel_domain
+  default: example.com
+
+- name: tunnel_ssl_cert
+  default: site.crt
+
+- name: tunnel_ssl_key
+  default: site.key
+
+
+dependencies:
+  frpc: install from https://github.com/fatedier/frp
+
+
+flags:
+
+- long: --name
+  short: -n
+  arg: name
+  repeatable: true
+  help: Name to use for proxy url
+
+- long: --auth-token
+  short: -t
+  arg: auth-token
+  help: Token to authenticate with server
+
+- long: --server-addr
+  short: -s
+  arg: server-addr
+  help: Server address to connect
+
+- long: --server-port
+  short: -p
+  arg: server-addr
+  validate: integer
+  help: Server address to connect
+
+- long: --domain
+  short: -d
+  arg: domain
+  help: Domain to use for local proxy
+
+- long: --ssl-cert
+  short: -c
+  arg: ssl-cert
+  help: Certificate to use to proxy local port
+
+- long: --ssl-key
+  short: -k
+  arg: ssl-key
+  help: Key to use to proxy local port
+
+- long: --web
+  short: -W
+  help: Enable local web server
+
+- long: --web-addr
+  short: -S
+  arg: web-addr
+  default: 127.0.0.1
+  help: Local web server address
+
+- long: --web-port
+  short: -P
+  arg: web-port
+  help: Local web server address
+
+- long: --local-addr
+  short: -l
+  arg: local-addr
+  default: 127.0.0.1
+  help: Local address to proxy to
+
+- long: --debug
+  help: Display runtime info
+
+
+examples:
+- tunnel 8080
+- tunnel 8080 nginx --name nginx
+- tunnel 8080 nginx -s frps.mydomain.com -p 8000
+- tunnel 8080 nginx -c site.crt -k site.key
