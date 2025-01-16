@@ -123,6 +123,11 @@ tunnel_usage() {
     echo
 
     # :flag.usage
+    printf "  %s\n" "--frpc-bin, -b FRPC-BIN"
+    printf "    Path to frpc binary\n"
+    echo
+
+    # :flag.usage
     printf "  %s\n" "--debug"
     printf "    Display runtime info\n"
     echo
@@ -179,6 +184,11 @@ tunnel_usage() {
     printf "  %s\n" "TUNNEL_SSL_KEY"
     printf "\n"
     printf "    %s\n" "Default: site.key"
+    echo
+
+    # :environment_variable.usage
+    printf "  %s\n" "TUNNEL_FRPC_BIN"
+    printf "\n"
     echo
 
     # :command.usage_examples
@@ -267,7 +277,7 @@ function connect() {
   # Cleanup old configs
   find -H $workdir -name "frpc_*" -mmin +1 -exec rm {} \;
 
-  \frpc -c $config
+  $frpcBin -c $config
 }
 
 # src/lib/setup.sh
@@ -281,7 +291,7 @@ function setup() {
   sslCert=${args[--ssl-cert]:-$TUNNEL_SSL_CERT}
   sslKey=${args[--ssl-key]:-$TUNNEL_SSL_KEY}
   localAddr=${args[--local-addr]}
-
+  frpcBin=${args[--frpc-bin]:-${TUNNEL_FRPC_BIN:-frpc}}
   webAddr=${args[--web-addr]}
 
   # Use --web-port if set, otherwise use 7400 if only --web is set
@@ -305,7 +315,7 @@ function setup() {
 
   export FRP_TOKEN=$authToken
 
-  workdir=/tmp
+  workdir=/tmp/frpc && mkdir -p $workdir
 
   config="${workdir}/frpc_$(date +%s).yaml"
 }
@@ -370,6 +380,7 @@ parse_requirements() {
   env_var_names+=("TUNNEL_DOMAIN")
   env_var_names+=("TUNNEL_SSL_CERT")
   env_var_names+=("TUNNEL_SSL_KEY")
+  env_var_names+=("TUNNEL_FRPC_BIN")
 
   # :command.dependencies_filter
   missing_deps=
@@ -542,6 +553,20 @@ parse_requirements() {
           shift
         else
           printf "%s\n" "--local-addr requires an argument: --local-addr, -l LOCAL-ADDR" >&2
+          exit 1
+        fi
+        ;;
+
+      # :flag.case
+      --frpc-bin | -b)
+
+        # :flag.case_arg
+        if [[ -n ${2+x} ]]; then
+          args['--frpc-bin']="$2"
+          shift
+          shift
+        else
+          printf "%s\n" "--frpc-bin requires an argument: --frpc-bin, -b FRPC-BIN" >&2
           exit 1
         fi
         ;;

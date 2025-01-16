@@ -8,5 +8,5 @@ function connect() {
   # Cleanup old configs
   find -H $workdir -name "frpc_*" -mmin +1 -exec rm {} \;
 
-  \frpc -c $config
+  $frpcBin -c $config
 }

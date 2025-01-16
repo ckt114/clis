@@ -8,7 +8,7 @@ function setup() {
   sslCert=${args[--ssl-cert]:-$TUNNEL_SSL_CERT}
   sslKey=${args[--ssl-key]:-$TUNNEL_SSL_KEY}
   localAddr=${args[--local-addr]}
-
+  frpcBin=${args[--frpc-bin]:-${TUNNEL_FRPC_BIN:-frpc}}
   webAddr=${args[--web-addr]}
 
   # Use --web-port if set, otherwise use 7400 if only --web is set
@@ -32,7 +32,7 @@ function setup() {
 
   export FRP_TOKEN=$authToken
 
-  workdir=/tmp
+  workdir=/tmp/frpc && mkdir -p $workdir
 
   config="${workdir}/frpc_$(date +%s).yaml"
 }

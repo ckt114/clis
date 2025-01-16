@@ -29,6 +29,8 @@ environment_variables:
 - name: tunnel_ssl_key
   default: site.key
 
+- name: tunnel_frpc_bin
+
 
 dependencies:
   frpc: install from https://github.com/fatedier/frp
@@ -93,6 +95,11 @@ flags:
   arg: local-addr
   default: 127.0.0.1
   help: Local address to proxy to
+
+- long: --frpc-bin
+  short: -b
+  arg: frpc-bin
+  help: Path to frpc binary
 
 - long: --debug
   help: Display runtime info
