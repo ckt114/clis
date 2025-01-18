@@ -1,8 +1,12 @@
 function connect() {
   echo
-  for d in "${customDomains[@]}"; do
-    echo "Visit ${1}://${d} to see your application."
-  done
+  if [[ $1 == "https" ]]; then
+    for d in "${customDomains[@]}"; do
+      echo "Visit ${1}://${d} to see your application."
+    done
+  else
+    echo "TCP application accessible at ${serverAddr} on port ${remotePort}."
+  fi
   echo
 
   # Cleanup old configs

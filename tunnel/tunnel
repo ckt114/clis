@@ -9,41 +9,6 @@ if [[ "${BASH_VERSINFO:-0}" -lt 4 ]]; then
 fi
 
 # :command.master_script
-# :command.root_command
-root_command() {
-  # src/root_command.sh
-  [[ ${args[--debug]} -gt 0 ]] && inspect_args
-
-  setup
-
-  cat >$config <<EOF
-serverAddr: ${serverAddr}
-serverPort: ${serverPort}
-auth:
-  method: token
-  token: "{{ .Envs.FRP_TOKEN }}"
-webServer:
-  addr: ${webAddr}
-  port: ${webPort}
-
-proxies:
-- name: ${name}
-  type: https
-  customDomains: [ $(printf "%s, " "${customDomains[@]}") ]
-  plugin:
-    type: https2http
-    localAddr: ${localAddr}:${port}
-    crtPath: ${sslCert}
-    keyPath: ${sslKey}
-    hostHeaderRewrite: ${localAddr}
-    requestHeaders:
-      set:
-        x-from-where: frp
-EOF
-
-  connect https
-
-}
 
 # :command.version_command
 version_command() {
@@ -52,24 +17,24 @@ version_command() {
 
 # :command.usage
 tunnel_usage() {
-  printf "tunnel - Create a reverse proxy tunnel using frpc.\n\n"
+  printf "tunnel - Create reverse proxy tunnel using frpc.\n\n"
 
   printf "%s\n" "Usage:"
-  printf "  tunnel PORT [OPTIONS]\n"
-  printf "  tunnel --help | -h\n"
+  printf "  tunnel [OPTIONS] COMMAND\n"
+  printf "  tunnel [COMMAND] --help | -h\n"
   printf "  tunnel --version | -v\n"
+  echo
+  # :command.usage_commands
+  printf "%s\n" "Commands:"
+  printf "  %s   \n" "https"
+  printf "  %s   \n" "tcp  "
   echo
 
   # :command.long_usage
   if [[ -n "$long_usage" ]]; then
-    printf "%s\n" "Options:"
+    printf "%s\n" "Global Options:"
 
     # :command.usage_flags
-    # :flag.usage
-    printf "  %s\n" "--name, -n NAME (repeatable)"
-    printf "    Name to use for proxy url\n"
-    echo
-
     # :flag.usage
     printf "  %s\n" "--auth-token, -t AUTH-TOKEN"
     printf "    Token to authenticate with server\n"
@@ -83,21 +48,6 @@ tunnel_usage() {
     # :flag.usage
     printf "  %s\n" "--server-port, -p SERVER-ADDR"
     printf "    Server address to connect\n"
-    echo
-
-    # :flag.usage
-    printf "  %s\n" "--domain, -d DOMAIN"
-    printf "    Domain to use for local proxy\n"
-    echo
-
-    # :flag.usage
-    printf "  %s\n" "--ssl-cert, -c SSL-CERT"
-    printf "    Certificate to use to proxy local port\n"
-    echo
-
-    # :flag.usage
-    printf "  %s\n" "--ssl-key, -k SSL-KEY"
-    printf "    Key to use to proxy local port\n"
     echo
 
     # :flag.usage
@@ -117,19 +67,8 @@ tunnel_usage() {
     echo
 
     # :flag.usage
-    printf "  %s\n" "--local-addr, -l LOCAL-ADDR"
-    printf "    Local address to proxy to\n"
-    printf "    %s\n" "Default: 127.0.0.1"
-    echo
-
-    # :flag.usage
     printf "  %s\n" "--frpc-bin, -b FRPC-BIN"
     printf "    Path to frpc binary\n"
-    echo
-
-    # :flag.usage
-    printf "  %s\n" "--debug"
-    printf "    Display runtime info\n"
     echo
 
     # :command.usage_fixed_flags
@@ -138,14 +77,6 @@ tunnel_usage() {
     echo
     printf "  %s\n" "--version, -v"
     printf "    Show version number\n"
-    echo
-
-    # :command.usage_args
-    printf "%s\n" "Arguments:"
-
-    # :argument.usage
-    printf "  %s\n" "PORT"
-    printf "    Local port to proxy to\n"
     echo
 
     # :command.usage_environment_variables
@@ -197,6 +128,119 @@ tunnel_usage() {
     printf "  tunnel 8080 nginx --name nginx\n"
     printf "  tunnel 8080 nginx -s frps.mydomain.com -p 8000\n"
     printf "  tunnel 8080 nginx -c site.crt -k site.key\n"
+    echo
+
+  fi
+}
+
+# :command.usage
+tunnel_https_usage() {
+  printf "tunnel https\n\n"
+
+  printf "%s\n" "Usage:"
+  printf "  tunnel https PORT [OPTIONS]\n"
+  printf "  tunnel https --help | -h\n"
+  echo
+
+  # :command.long_usage
+  if [[ -n "$long_usage" ]]; then
+    printf "%s\n" "Options:"
+
+    # :command.usage_flags
+    # :flag.usage
+    printf "  %s\n" "--name, -n NAME (repeatable)"
+    printf "    Name to use for proxy url\n"
+    echo
+
+    # :flag.usage
+    printf "  %s\n" "--domain, -d DOMAIN"
+    printf "    Domain to use for local proxy\n"
+    echo
+
+    # :flag.usage
+    printf "  %s\n" "--ssl-cert, -c SSL-CERT"
+    printf "    Certificate to use to proxy local port\n"
+    echo
+
+    # :flag.usage
+    printf "  %s\n" "--ssl-key, -k SSL-KEY"
+    printf "    Key to use to proxy local port\n"
+    echo
+
+    # :flag.usage
+    printf "  %s\n" "--local-addr, -l LOCAL-ADDR"
+    printf "    Local address to proxy to\n"
+    printf "    %s\n" "Default: 127.0.0.1"
+    echo
+
+    # :flag.usage
+    printf "  %s\n" "--debug"
+    printf "    Display runtime info\n"
+    echo
+
+    # :command.usage_fixed_flags
+    printf "  %s\n" "--help, -h"
+    printf "    Show this help\n"
+    echo
+
+    # :command.usage_args
+    printf "%s\n" "Arguments:"
+
+    # :argument.usage
+    printf "  %s\n" "PORT"
+    printf "    Local port to proxy to\n"
+    echo
+
+  fi
+}
+
+# :command.usage
+tunnel_tcp_usage() {
+  printf "tunnel tcp\n\n"
+
+  printf "%s\n" "Usage:"
+  printf "  tunnel tcp PORT [OPTIONS]\n"
+  printf "  tunnel tcp --help | -h\n"
+  echo
+
+  # :command.long_usage
+  if [[ -n "$long_usage" ]]; then
+    printf "%s\n" "Options:"
+
+    # :command.usage_flags
+    # :flag.usage
+    printf "  %s\n" "--name, -n NAME (repeatable)"
+    printf "    Name to use for proxy url\n"
+    echo
+
+    # :flag.usage
+    printf "  %s\n" "--local-addr, -l LOCAL-ADDR"
+    printf "    Local address to proxy to\n"
+    printf "    %s\n" "Default: 127.0.0.1"
+    echo
+
+    # :flag.usage
+    printf "  %s\n" "--remote-port, -r REMOTE-PORT"
+    printf "    Remote TCP port to expose\n"
+    printf "    %s\n" "Default: 22"
+    echo
+
+    # :flag.usage
+    printf "  %s\n" "--debug"
+    printf "    Display runtime info\n"
+    echo
+
+    # :command.usage_fixed_flags
+    printf "  %s\n" "--help, -h"
+    printf "    Show this help\n"
+    echo
+
+    # :command.usage_args
+    printf "%s\n" "Arguments:"
+
+    # :argument.usage
+    printf "  %s\n" "PORT"
+    printf "    Local port to proxy to\n"
     echo
 
   fi
@@ -269,9 +313,13 @@ inspect_args() {
 # src/lib/connect.sh
 function connect() {
   echo
-  for d in "${customDomains[@]}"; do
-    echo "Visit ${1}://${d} to see your application."
-  done
+  if [[ $1 == "https" ]]; then
+    for d in "${customDomains[@]}"; do
+      echo "Visit ${1}://${d} to see your application."
+    done
+  else
+    echo "TCP application accessible at ${serverAddr} on port ${remotePort}."
+  fi
   echo
 
   # Cleanup old configs
@@ -280,8 +328,22 @@ function connect() {
   $frpcBin -c $config
 }
 
-# src/lib/setup.sh
-function setup() {
+# src/lib/setupServer.sh
+function setupServer() {
+  cat >$config <<EOF
+serverAddr: ${serverAddr}
+serverPort: ${serverPort}
+auth:
+  method: token
+  token: "{{ .Envs.FRP_TOKEN }}"
+webServer:
+  addr: ${webAddr}
+  port: ${webPort}
+EOF
+}
+
+# src/lib/setupVars.sh
+function setupVars() {
   port=${args[port]}
 
   authToken=${args[--auth-token]:-$TUNNEL_AUTH_TOKEN}
@@ -293,6 +355,7 @@ function setup() {
   localAddr=${args[--local-addr]}
   frpcBin=${args[--frpc-bin]:-${TUNNEL_FRPC_BIN:-frpc}}
   webAddr=${args[--web-addr]}
+  remotePort=${args[--remote-port]}
 
   # Use --web-port if set, otherwise use 7400 if only --web is set
   webPort=${args[--web-port]}
@@ -341,6 +404,56 @@ validate_not_empty() {
 }
 
 # :command.command_functions
+# :command.function
+tunnel_https_command() {
+
+  # src/https_command.sh
+  [[ ${args[--debug]} -gt 0 ]] && inspect_args
+
+  setupVars
+  setupServer
+
+  cat >>$config <<EOF
+proxies:
+- name: ${name}
+  type: https
+  customDomains: [ $(printf "%s, " "${customDomains[@]}") ]
+  plugin:
+    type: https2http
+    localAddr: ${localAddr}:${port}
+    crtPath: ${sslCert}
+    keyPath: ${sslKey}
+    hostHeaderRewrite: ${localAddr}
+    requestHeaders:
+      set:
+        x-from-where: frp
+EOF
+
+  connect https
+
+}
+
+# :command.function
+tunnel_tcp_command() {
+
+  # src/tcp_command.sh
+  [[ ${args[--debug]} -gt 0 ]] && inspect_args
+
+  setupVars
+  setupServer
+
+  cat >>$config <<EOF
+proxies:
+- name: ${name}
+  type: tcp
+  localIP: ${localAddr}
+  localPort: ${port}
+  remotePort: ${remotePort}
+EOF
+
+  connect tcp
+
+}
 
 # :command.parse_requirements
 parse_requirements() {
@@ -357,6 +470,98 @@ parse_requirements() {
         long_usage=yes
         tunnel_usage
         exit
+        ;;
+
+      # :flag.case
+      --auth-token | -t)
+
+        # :flag.case_arg
+        if [[ -n ${2+x} ]]; then
+          args['--auth-token']="$2"
+          shift
+          shift
+        else
+          printf "%s\n" "--auth-token requires an argument: --auth-token, -t AUTH-TOKEN" >&2
+          exit 1
+        fi
+        ;;
+
+      # :flag.case
+      --server-addr | -s)
+
+        # :flag.case_arg
+        if [[ -n ${2+x} ]]; then
+          args['--server-addr']="$2"
+          shift
+          shift
+        else
+          printf "%s\n" "--server-addr requires an argument: --server-addr, -s SERVER-ADDR" >&2
+          exit 1
+        fi
+        ;;
+
+      # :flag.case
+      --server-port | -p)
+
+        # :flag.case_arg
+        if [[ -n ${2+x} ]]; then
+          args['--server-port']="$2"
+          shift
+          shift
+        else
+          printf "%s\n" "--server-port requires an argument: --server-port, -p SERVER-ADDR" >&2
+          exit 1
+        fi
+        ;;
+
+      # :flag.case
+      --web | -W)
+
+        # :flag.case_no_arg
+        args['--web']=1
+        shift
+        ;;
+
+      # :flag.case
+      --web-addr | -S)
+
+        # :flag.case_arg
+        if [[ -n ${2+x} ]]; then
+          args['--web-addr']="$2"
+          shift
+          shift
+        else
+          printf "%s\n" "--web-addr requires an argument: --web-addr, -S WEB-ADDR" >&2
+          exit 1
+        fi
+        ;;
+
+      # :flag.case
+      --web-port | -P)
+
+        # :flag.case_arg
+        if [[ -n ${2+x} ]]; then
+          args['--web-port']="$2"
+          shift
+          shift
+        else
+          printf "%s\n" "--web-port requires an argument: --web-port, -P WEB-PORT" >&2
+          exit 1
+        fi
+        ;;
+
+      # :flag.case
+      --frpc-bin | -b)
+
+        # :flag.case_arg
+        if [[ -n ${2+x} ]]; then
+          args['--frpc-bin']="$2"
+          shift
+          shift
+        else
+          printf "%s\n" "--frpc-bin requires an argument: --frpc-bin, -b FRPC-BIN" >&2
+          exit 1
+        fi
         ;;
 
       *)
@@ -398,7 +603,92 @@ parse_requirements() {
   fi
 
   # :command.command_filter
-  action="root"
+  action=${1:-}
+
+  case $action in
+    -*) ;;
+
+    https)
+      action="https"
+      shift
+      tunnel_https_parse_requirements "$@"
+      shift $#
+      ;;
+
+    tcp)
+      action="tcp"
+      shift
+      tunnel_tcp_parse_requirements "$@"
+      shift $#
+      ;;
+
+    # :command.command_fallback
+    "")
+      tunnel_usage >&2
+      exit 1
+      ;;
+
+    *)
+      printf "invalid command: %s\n" "$action" >&2
+      exit 1
+      ;;
+
+  esac
+
+  # :command.parse_requirements_while
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+
+      -?*)
+        printf "invalid option: %s\n" "$key" >&2
+        exit 1
+        ;;
+
+      *)
+        # :command.parse_requirements_case
+        # :command.parse_requirements_case_simple
+        printf "invalid argument: %s\n" "$key" >&2
+        exit 1
+
+        ;;
+
+    esac
+  done
+
+  # :command.default_assignments
+  [[ -n ${args['--web-addr']:-} ]] || args['--web-addr']="127.0.0.1"
+
+  # :command.validations
+  # :flag.validations
+  if [[ -v args['--server-port'] && -n $(validate_integer "${args['--server-port']:-}") ]]; then
+    printf "validation error in %s:\n%s\n" "--server-port, -p SERVER-ADDR" "$(validate_integer "${args['--server-port']:-}")" >&2
+    exit 1
+  fi
+
+}
+
+# :command.parse_requirements
+tunnel_https_parse_requirements() {
+  # :command.fixed_flags_filter
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+      --help | -h)
+        long_usage=yes
+        tunnel_https_usage
+        exit
+        ;;
+
+      *)
+        break
+        ;;
+
+    esac
+  done
+
+  # :command.command_filter
+  action="https"
 
   # :command.parse_requirements_while
   while [[ $# -gt 0 ]]; do
@@ -419,48 +709,6 @@ parse_requirements() {
           shift
         else
           printf "%s\n" "--name requires an argument: --name, -n NAME" >&2
-          exit 1
-        fi
-        ;;
-
-      # :flag.case
-      --auth-token | -t)
-
-        # :flag.case_arg
-        if [[ -n ${2+x} ]]; then
-          args['--auth-token']="$2"
-          shift
-          shift
-        else
-          printf "%s\n" "--auth-token requires an argument: --auth-token, -t AUTH-TOKEN" >&2
-          exit 1
-        fi
-        ;;
-
-      # :flag.case
-      --server-addr | -s)
-
-        # :flag.case_arg
-        if [[ -n ${2+x} ]]; then
-          args['--server-addr']="$2"
-          shift
-          shift
-        else
-          printf "%s\n" "--server-addr requires an argument: --server-addr, -s SERVER-ADDR" >&2
-          exit 1
-        fi
-        ;;
-
-      # :flag.case
-      --server-port | -p)
-
-        # :flag.case_arg
-        if [[ -n ${2+x} ]]; then
-          args['--server-port']="$2"
-          shift
-          shift
-        else
-          printf "%s\n" "--server-port requires an argument: --server-port, -p SERVER-ADDR" >&2
           exit 1
         fi
         ;;
@@ -508,42 +756,6 @@ parse_requirements() {
         ;;
 
       # :flag.case
-      --web | -W)
-
-        # :flag.case_no_arg
-        args['--web']=1
-        shift
-        ;;
-
-      # :flag.case
-      --web-addr | -S)
-
-        # :flag.case_arg
-        if [[ -n ${2+x} ]]; then
-          args['--web-addr']="$2"
-          shift
-          shift
-        else
-          printf "%s\n" "--web-addr requires an argument: --web-addr, -S WEB-ADDR" >&2
-          exit 1
-        fi
-        ;;
-
-      # :flag.case
-      --web-port | -P)
-
-        # :flag.case_arg
-        if [[ -n ${2+x} ]]; then
-          args['--web-port']="$2"
-          shift
-          shift
-        else
-          printf "%s\n" "--web-port requires an argument: --web-port, -P WEB-PORT" >&2
-          exit 1
-        fi
-        ;;
-
-      # :flag.case
       --local-addr | -l)
 
         # :flag.case_arg
@@ -553,20 +765,6 @@ parse_requirements() {
           shift
         else
           printf "%s\n" "--local-addr requires an argument: --local-addr, -l LOCAL-ADDR" >&2
-          exit 1
-        fi
-        ;;
-
-      # :flag.case
-      --frpc-bin | -b)
-
-        # :flag.case_arg
-        if [[ -n ${2+x} ]]; then
-          args['--frpc-bin']="$2"
-          shift
-          shift
-        else
-          printf "%s\n" "--frpc-bin requires an argument: --frpc-bin, -b FRPC-BIN" >&2
           exit 1
         fi
         ;;
@@ -603,13 +801,12 @@ parse_requirements() {
 
   # :command.required_args_filter
   if [[ -z ${args['port']+x} ]]; then
-    printf "missing required argument: PORT\nusage: tunnel PORT [OPTIONS]\n" >&2
+    printf "missing required argument: PORT\nusage: tunnel https PORT [OPTIONS]\n" >&2
 
     exit 1
   fi
 
   # :command.default_assignments
-  [[ -n ${args['--web-addr']:-} ]] || args['--web-addr']="127.0.0.1"
   [[ -n ${args['--local-addr']:-} ]] || args['--local-addr']="127.0.0.1"
 
   # :command.validations
@@ -619,9 +816,126 @@ parse_requirements() {
     exit 1
   fi
 
-  # :flag.validations
-  if [[ -v args['--server-port'] && -n $(validate_integer "${args['--server-port']:-}") ]]; then
-    printf "validation error in %s:\n%s\n" "--server-port, -p SERVER-ADDR" "$(validate_integer "${args['--server-port']:-}")" >&2
+}
+
+# :command.parse_requirements
+tunnel_tcp_parse_requirements() {
+  # :command.fixed_flags_filter
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+      --help | -h)
+        long_usage=yes
+        tunnel_tcp_usage
+        exit
+        ;;
+
+      *)
+        break
+        ;;
+
+    esac
+  done
+
+  # :command.command_filter
+  action="tcp"
+
+  # :command.parse_requirements_while
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case "$key" in
+      # :flag.case
+      --name | -n)
+
+        # :flag.case_arg
+        if [[ -n ${2+x} ]]; then
+          escaped="$(printf '%q' "$2")"
+          if [[ -z ${args['--name']+x} ]]; then
+            args['--name']="$escaped"
+          else
+            args['--name']="${args['--name']} $escaped"
+          fi
+          shift
+          shift
+        else
+          printf "%s\n" "--name requires an argument: --name, -n NAME" >&2
+          exit 1
+        fi
+        ;;
+
+      # :flag.case
+      --local-addr | -l)
+
+        # :flag.case_arg
+        if [[ -n ${2+x} ]]; then
+          args['--local-addr']="$2"
+          shift
+          shift
+        else
+          printf "%s\n" "--local-addr requires an argument: --local-addr, -l LOCAL-ADDR" >&2
+          exit 1
+        fi
+        ;;
+
+      # :flag.case
+      --remote-port | -r)
+
+        # :flag.case_arg
+        if [[ -n ${2+x} ]]; then
+          args['--remote-port']="$2"
+          shift
+          shift
+        else
+          printf "%s\n" "--remote-port requires an argument: --remote-port, -r REMOTE-PORT" >&2
+          exit 1
+        fi
+        ;;
+
+      # :flag.case
+      --debug)
+
+        # :flag.case_no_arg
+        args['--debug']=1
+        shift
+        ;;
+
+      -?*)
+        printf "invalid option: %s\n" "$key" >&2
+        exit 1
+        ;;
+
+      *)
+        # :command.parse_requirements_case
+        # :command.parse_requirements_case_simple
+        # :argument.case
+        if [[ -z ${args['port']+x} ]]; then
+          args['port']=$1
+          shift
+        else
+          printf "invalid argument: %s\n" "$key" >&2
+          exit 1
+        fi
+
+        ;;
+
+    esac
+  done
+
+  # :command.required_args_filter
+  if [[ -z ${args['port']+x} ]]; then
+    printf "missing required argument: PORT\nusage: tunnel tcp PORT [OPTIONS]\n" >&2
+
+    exit 1
+  fi
+
+  # :command.default_assignments
+  [[ -n ${args['--local-addr']:-} ]] || args['--local-addr']="127.0.0.1"
+  [[ -n ${args['--remote-port']:-} ]] || args['--remote-port']="22"
+
+  # :command.validations
+  # :argument.validations
+  if [[ -v args['port'] && -n $(validate_integer "${args['port']:-}") ]]; then
+    printf "validation error in %s:\n%s\n" "PORT" "$(validate_integer "${args['port']:-}")" >&2
     exit 1
   fi
 
@@ -654,7 +968,8 @@ run() {
   parse_requirements "${input[@]}"
 
   case "$action" in
-    "root") root_command ;;
+    "https") tunnel_https_command ;;
+    "tcp") tunnel_tcp_command ;;
   esac
 }
 

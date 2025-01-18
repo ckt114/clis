@@ -1,4 +1,4 @@
-function setup() {
+function setupVars() {
   port=${args[port]}
 
   authToken=${args[--auth-token]:-$TUNNEL_AUTH_TOKEN}
@@ -10,6 +10,7 @@ function setup() {
   localAddr=${args[--local-addr]}
   frpcBin=${args[--frpc-bin]:-${TUNNEL_FRPC_BIN:-frpc}}
   webAddr=${args[--web-addr]}
+  remotePort=${args[--remote-port]}
 
   # Use --web-port if set, otherwise use 7400 if only --web is set
   webPort=${args[--web-port]}

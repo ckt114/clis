@@ -1,14 +1,71 @@
 name: tunnel
-help: Create a reverse proxy tunnel using frpc.
+help: Create reverse proxy tunnel using frpc.
 version: 0.1.0
 
 
-args:
+commands:
 
-- name: port
-  required: true
-  validate: integer
-  help: Local port to proxy to
+- name: https
+
+  args:
+
+  - &port
+    name: port
+    required: true
+    validate: integer
+    help: Local port to proxy to
+
+  flags:
+
+  - &name
+    long: --name
+    short: -n
+    arg: name
+    repeatable: true
+    help: Name to use for proxy url
+
+  - long: --domain
+    short: -d
+    arg: domain
+    help: Domain to use for local proxy
+
+  - long: --ssl-cert
+    short: -c
+    arg: ssl-cert
+    help: Certificate to use to proxy local port
+
+  - long: --ssl-key
+    short: -k
+    arg: ssl-key
+    help: Key to use to proxy local port
+
+  - &localAddr
+    long: --local-addr
+    short: -l
+    arg: local-addr
+    default: 127.0.0.1
+    help: Local address to proxy to
+
+  - &debug
+    long: --debug
+    help: Display runtime info
+
+- name: tcp
+
+  args:
+  - *port
+
+  flags:
+  - *name
+  - *localAddr
+
+  - long: --remote-port
+    short: -r
+    arg: remote-port
+    default: "22"
+    help: Remote TCP port to expose
+
+  - *debug
 
 
 environment_variables:
@@ -38,12 +95,6 @@ dependencies:
 
 flags:
 
-- long: --name
-  short: -n
-  arg: name
-  repeatable: true
-  help: Name to use for proxy url
-
 - long: --auth-token
   short: -t
   arg: auth-token
@@ -60,21 +111,6 @@ flags:
   validate: integer
   help: Server address to connect
 
-- long: --domain
-  short: -d
-  arg: domain
-  help: Domain to use for local proxy
-
-- long: --ssl-cert
-  short: -c
-  arg: ssl-cert
-  help: Certificate to use to proxy local port
-
-- long: --ssl-key
-  short: -k
-  arg: ssl-key
-  help: Key to use to proxy local port
-
 - long: --web
   short: -W
   help: Enable local web server
@@ -90,19 +126,11 @@ flags:
   arg: web-port
   help: Local web server address
 
-- long: --local-addr
-  short: -l
-  arg: local-addr
-  default: 127.0.0.1
-  help: Local address to proxy to
-
 - long: --frpc-bin
   short: -b
   arg: frpc-bin
   help: Path to frpc binary
 
-- long: --debug
-  help: Display runtime info
 
 
 examples:
